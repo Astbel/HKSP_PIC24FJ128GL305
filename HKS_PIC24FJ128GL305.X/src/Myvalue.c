@@ -3,6 +3,7 @@
 -----------------------------------------------*/
 #include "../inc/Myvalue.h"
 #include "../mcc_generated_files/i2c1.h"
+#include "../inc/pmbus_stack.h"
 /*-----------------------------------------------
    Struct delcare
 -----------------------------------------------*/
@@ -11,7 +12,7 @@
 /*-----------------------------------------------
    value  delcare
 -----------------------------------------------*/
-
+uint8_t EEPROM_TEST[16];
 uint8_t i2cWrData;
 uint8_t writeBuffer[3];
 /*-----------------------------------------------
@@ -22,6 +23,11 @@ void Init_value(void)
     i2cWrData = 0x0F;
 
     writeBuffer[0] = i2cWrData;
+
+    READ_VIN[0] =0xFF;  //Low
+    READ_VIN[1] =0xA1;  //high
+
+   
 }
 
 

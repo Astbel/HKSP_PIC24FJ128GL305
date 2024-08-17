@@ -54,9 +54,10 @@
 #include "interrupt_manager.h"
 #include "traps.h"
 #include "uart1.h"
-#include "i2c2.h"
+#include "tmr2.h"
 #include "i2c1.h"
 #include "tmr1.h"
+#include "i2c2.h"
 
 #warning "This file will be removed in future MCC releases. Use system.h instead."
 

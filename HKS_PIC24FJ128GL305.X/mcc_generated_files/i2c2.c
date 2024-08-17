@@ -51,506 +51,669 @@
 */
 
 /**
-  I2C Slave Driver State Enumeration
+  I2C Driver Queue Status Type
 
   @Summary
-    Defines the different states of the i2c slave.
+    Defines the type used for the transaction queue status.
 
   @Description
-    This defines the different states that the i2c slave
+    This defines type used to keep track of the queue status.
+ */
+
+typedef union
+{
+    struct
+    {
+            uint8_t full:1;
+            uint8_t empty:1;
+            uint8_t reserved:6;
+    }s;
+    uint8_t status;
+} I2C_TR_QUEUE_STATUS;
+
+/**
+  I2C Driver Queue Entry Type
+
+  @Summary
+    Defines the object used for an entry in the i2c queue items.
+
+  @Description
+    This defines the object in the i2c queue. Each entry is a composed
+    of a list of TRBs, the number of the TRBs and the status of the
+    currently processed TRB.
+ */
+typedef struct
+{
+    uint8_t                         count;          // a count of trb's in the trb list
+    I2C2_TRANSACTION_REQUEST_BLOCK  *ptrb_list;     // pointer to the trb list
+    I2C2_MESSAGE_STATUS             *pTrFlag;       // set with the error of the last trb sent.
+                                                    // if all trb's are sent successfully,
+                                                    // then this is I2C2_MESSAGE_COMPLETE
+} I2C_TR_QUEUE_ENTRY;
+
+/**
+  I2C Master Driver Object Type
+
+  @Summary
+    Defines the object that manages the i2c master.
+
+  @Description
+    This defines the object that manages the sending and receiving of
+    i2c master transactions.
+  */
+
+typedef struct
+{
+    /* Read/Write Queue */
+    I2C_TR_QUEUE_ENTRY          *pTrTail;       // tail of the queue
+    I2C_TR_QUEUE_ENTRY          *pTrHead;       // head of the queue
+    I2C_TR_QUEUE_STATUS         trStatus;       // status of the last transaction
+    uint8_t                     i2cDoneFlag;    // flag to indicate the current
+                                                // transaction is done
+    uint8_t                     i2cErrors;      // keeps track of errors
+
+
+} I2C_OBJECT ;
+
+/**
+  I2C Master Driver State Enumeration
+
+  @Summary
+    Defines the different states of the i2c master.
+
+  @Description
+    This defines the different states that the i2c master
     used to process transactions on the i2c bus.
 */
+
 typedef enum
 {
-    S_SLAVE_IDLE,
-    S_SLAVE_RECEIVE_MODE,
-    S_SLAVE_TRANSMIT_MODE,
-    S_SLAVE_LOW_BYTE_ADDRESS_DETECT,
-
-} I2C_SLAVE_STATES;
+    S_MASTER_IDLE,
+    S_MASTER_RESTART,
+    S_MASTER_SEND_ADDR,
+    S_MASTER_SEND_DATA,
+    S_MASTER_SEND_STOP,
+    S_MASTER_ACK_ADDR,
+    S_MASTER_RCV_DATA,
+    S_MASTER_RCV_STOP,
+    S_MASTER_ACK_RCV_DATA,
+    S_MASTER_NOACK_STOP,
+    S_MASTER_SEND_ADDR_10BIT_LSB,
+    S_MASTER_10BIT_RESTART,
+    
+} I2C_MASTER_STATES;
 
 /**
  Section: Macro Definitions
 */
-/* defined for I2C2 */
-#define I2C2_TRANSMIT_REG                       I2C2TRN	// Defines the transmit register used to send data.
-#define I2C2_RECEIVE_REG                        I2C2RCV	// Defines the receive register used to receive data.
 
-#define I2C2_MASK_REG                           I2C2MSK	// Defines the address mask register.
-#define I2C2_ADDRESS_REG                        I2C2ADD	// Defines the address register. 
+/* defined for I2C2 */
+
+
+#ifndef I2C2_CONFIG_TR_QUEUE_LENGTH
+        #define I2C2_CONFIG_TR_QUEUE_LENGTH 1
+#endif
+
+#define I2C2_TRANSMIT_REG                       I2C2TRN			// Defines the transmit register used to send data.
+#define I2C2_RECEIVE_REG                        I2C2RCV	// Defines the receive register used to receive data.
 
 // The following control bits are used in the I2C state machine to manage
 // the I2C module and determine next states.
-#define I2C2_GENERAL_CALL_ENABLE_BIT            I2C2CONLbits.GCEN	// I2C General Call enable control bit.
-#define I2C2_10_BIT_ADDRESS_ENABLE_BIT          I2C2CONLbits.A10M	// I2C Address Mode (7 or 10 bit address) control bit.
-#define I2C2_RELEASE_SCL_CLOCK_CONTROL_BIT      I2C2CONLbits.SCLREL	// I2C clock stretch/release control bit.
-
-// The following status bits are used in the I2C state machine to determine
-// the next states.
-
-#define I2C2_READ_NOT_WRITE_STATUS_BIT          I2C2STATbits.R_W    // I2C current transaction read/write status bit.
-#define I2C2_DATA_NOT_ADDRESS_STATUS_BIT        I2C2STATbits.D_A    // I2C last byte receive was data/address status bit.
-#define I2C2_RECEIVE_OVERFLOW_STATUS_BIT        I2C2STATbits.I2COV	// I2C receive buffer overflow status bit.
-#define I2C2_GENERAL_CALL_ADDRESS_STATUS_BIT    I2C2STATbits.GCSTAT	// I2C General Call status bit.
+#define I2C2_WRITE_COLLISION_STATUS_BIT         I2C2STATbits.IWCOL	// Defines the write collision status bit.
 #define I2C2_ACKNOWLEDGE_STATUS_BIT             I2C2STATbits.ACKSTAT	// I2C ACK status bit.
 
-#define EMULATE_EEPROM_SIZE                     64
+#define I2C2_START_CONDITION_ENABLE_BIT         I2C2CONLbits.SEN		// I2C START control bit.
+#define I2C2_REPEAT_START_CONDITION_ENABLE_BIT  I2C2CONLbits.RSEN	// I2C Repeated START control bit.
+#define I2C2_RECEIVE_ENABLE_BIT                 I2C2CONLbits.RCEN	// I2C Receive enable control bit.
+#define I2C2_STOP_CONDITION_ENABLE_BIT          I2C2CONLbits.PEN		// I2C STOP control bit.
+#define I2C2_ACKNOWLEDGE_ENABLE_BIT             I2C2CONLbits.ACKEN 	// I2C ACK start control bit.
+#define I2C2_ACKNOWLEDGE_DATA_BIT               I2C2CONLbits.ACKDT	// I2C ACK data control bit.
+
 /**
  Section: Local Functions
 */
 
-inline void __attribute__ ((always_inline)) I2C2_TransmitProcess(void);
-inline void __attribute__ ((always_inline)) I2C2_ReceiveProcess(void);
+static void I2C2_FunctionComplete(void);
+static void I2C2_Stop(I2C2_MESSAGE_STATUS completion_code);
 
 /**
  Section: Local Variables
 */
 
-static I2C_SLAVE_STATES   i2c2_slave_state;
-static uint8_t            *p_i2c2_write_pointer;
-static uint8_t            *p_i2c2_read_pointer;
+static I2C_TR_QUEUE_ENTRY            i2c2_tr_queue[I2C2_CONFIG_TR_QUEUE_LENGTH];
+static I2C_OBJECT                    i2c2_object;
+static I2C_MASTER_STATES             i2c2_state = S_MASTER_IDLE;
+static uint8_t                       i2c2_trb_count;
+
+static I2C2_TRANSACTION_REQUEST_BLOCK *p_i2c2_trb_current;
+static I2C_TR_QUEUE_ENTRY            *p_i2c2_current = NULL;
+
 
 /**
-  Prototype:        void I2C2_Initialize(void)
-  Input:            none
-  Output:           none
-  Description:      I2C2_Initialize is an
-                    initialization routine that takes inputs from the GUI.
-  Comment:          
-  Usage:            I2C2_Initialize();
+  Section: Driver Interface
 */
+
 void I2C2_Initialize(void)
 {
+    
+    i2c2_object.pTrHead = i2c2_tr_queue;
+    i2c2_object.pTrTail = i2c2_tr_queue;
+    i2c2_object.trStatus.s.empty = true;
+    i2c2_object.trStatus.s.full = false;
 
+    i2c2_object.i2cErrors = 0;
+    
     // initialize the hardware
+    // Baud Rate Generator Value: I2CBRG 77;   
+    I2C2BRG = 0x4D;
     // ACKEN disabled; STRICT disabled; STREN disabled; GCEN disabled; SMEN disabled; DISSLW enabled; I2CSIDL disabled; ACKDT Sends ACK; SCLREL Holds; RSEN disabled; A10M 7 Bit; PEN disabled; RCEN disabled; SEN disabled; I2CEN enabled; 
     I2C2CONL = 0x8000;
     // BCL disabled; D_nA disabled; R_nW disabled; P disabled; S disabled; I2COV disabled; IWCOL disabled; 
     I2C2STAT = 0x00;
-    // ADD 0; 
-    I2C2_SlaveAddressSet(0x00);
-    // MSK 0; 
-    I2C2_SlaveAddressMaskSet(0x00);
 
-    // make sure this is set first
-    i2c2_slave_state = S_SLAVE_IDLE;
-    
-    I2C2_ReadPointerSet(NULL);
-    I2C2_WritePointerSet(NULL);
-    
-    /* SI2C2 - I2C2 Slave Events */
+    /* MI2C2 - I2C2 Master Events */
     // clear the master interrupt flag
-    IFS3bits.SI2C2IF = 0;
+    IFS3bits.MI2C2IF = 0;
     // enable the master interrupt
-    IEC3bits.SI2C2IE = 1;
-    
+    IEC3bits.MI2C2IE = 1;
+
 }
 
 
-void __attribute__ ( ( interrupt, no_auto_psv ) ) _SI2C2Interrupt ( void )
+uint8_t I2C2_ErrorCountGet(void)
 {
+    uint8_t ret;
 
-    static bool  prior_address_match = false;
-    static bool  not_busy = true;
-    uint8_t      dummy;
+    ret = i2c2_object.i2cErrors;
+    return ret;
+}
 
-    // NOTE: The slave driver will always acknowledge 
-    //       any address match.
+void __attribute__ ( ( interrupt, no_auto_psv ) ) _MI2C2Interrupt ( void )
+{
+  
+    static uint8_t  *pi2c_buf_ptr;
+    static uint16_t i2c_address;
+    static uint8_t  i2c_bytes_left;
+    static uint8_t  i2c_10bit_address_restart = 0;
 
-    switch (i2c2_slave_state)
+    IFS3bits.MI2C2IF = 0;
+            
+    // Check first if there was a collision.
+    // If we have a Write Collision, reset and go to idle state */
+    if(I2C2_WRITE_COLLISION_STATUS_BIT)
     {
-        case S_SLAVE_IDLE:
-        case S_SLAVE_RECEIVE_MODE:
+        // clear the Write colision
+        I2C2_WRITE_COLLISION_STATUS_BIT = 0;
+        i2c2_state = S_MASTER_IDLE;
+        *(p_i2c2_current->pTrFlag) = I2C2_MESSAGE_FAIL;
 
-            /* When at S_SLAVE_RECEIVE_MODE this mode there
-               will be two types of incoming transactions:
-               1. Data sent by master
-               2. A restart or start detection
+        // reset the buffer pointer
+        p_i2c2_current = NULL;
 
-               But from the point of view of the firmware, there is
-               no difference between S_SLAVE_IDLE and S_SLAVE_RECEIVE_MODE
-               states, since the types of incoming transactions will be
-               the same so we share the code here.
-             */
+        return;
+    }
 
-            if  (
-                    // case of 7-bit address detected
-                    (   (I2C2_10_BIT_ADDRESS_ENABLE_BIT       == 0) &&
-                        (I2C2_DATA_NOT_ADDRESS_STATUS_BIT     == 0)
-                    )
-                    ||
-                    // case of general address call detected
-                    (   (I2C2_GENERAL_CALL_ENABLE_BIT         == 1) &&
-                        (I2C2_GENERAL_CALL_ADDRESS_STATUS_BIT == 1)
-                    )
-                )
+    /* Handle the correct i2c state */
+    switch(i2c2_state)
+    {
+        case S_MASTER_IDLE:    /* In reset state, waiting for data to send */
+
+            if(i2c2_object.trStatus.s.empty != true)
             {
-                            
-                if (I2C2_READ_NOT_WRITE_STATUS_BIT == 0)
-                {
-                    // it is a write, go to receive mode 
+                // grab the item pointed by the head
+                p_i2c2_current     = i2c2_object.pTrHead;
+                i2c2_trb_count     = i2c2_object.pTrHead->count;
+                p_i2c2_trb_current = i2c2_object.pTrHead->ptrb_list;
 
-                    I2C2_StatusCallback(I2C2_SLAVE_RECEIVE_REQUEST_DETECTED);
-                    
-                    // Receive the data if valid
-                    I2C2_ReceiveProcess();
-                    i2c2_slave_state = S_SLAVE_RECEIVE_MODE;
+                i2c2_object.pTrHead++;
+
+                // check if the end of the array is reached
+                if(i2c2_object.pTrHead == (i2c2_tr_queue + I2C2_CONFIG_TR_QUEUE_LENGTH))
+                {
+                    // adjust to restart at the beginning of the array
+                    i2c2_object.pTrHead = i2c2_tr_queue;
+                }
+
+                // since we moved one item to be processed, we know
+                // it is not full, so set the full status to false
+                i2c2_object.trStatus.s.full = false;
+
+                // check if the queue is empty
+                if(i2c2_object.pTrHead == i2c2_object.pTrTail)
+                {
+                    // it is empty so set the empty status to true
+                    i2c2_object.trStatus.s.empty = true;
+                }
+
+                // send the start condition
+                I2C2_START_CONDITION_ENABLE_BIT = 1;
+
+                // start the i2c request
+                i2c2_state = S_MASTER_SEND_ADDR;
+            }
+
+            break;
+
+        case S_MASTER_RESTART:
+
+            /* check for pending i2c Request */
+
+            // ... trigger a REPEATED START
+            I2C2_REPEAT_START_CONDITION_ENABLE_BIT = 1;
+
+            // start the i2c request
+            i2c2_state = S_MASTER_SEND_ADDR;
+
+            break;
+
+        case S_MASTER_SEND_ADDR_10BIT_LSB:
+
+            if(I2C2_ACKNOWLEDGE_STATUS_BIT)
+            {
+                i2c2_object.i2cErrors++;
+                I2C2_Stop(I2C2_MESSAGE_ADDRESS_NO_ACK);
+            }
+            else
+            {
+                // Remove bit 0 as R/W is never sent here
+                I2C2_TRANSMIT_REG = (i2c_address >> 1) & 0x00FF;
+
+                // determine the next state, check R/W
+                if(i2c_address & 0x01)
+                {
+                    // if this is a read we must repeat start
+                    // the bus to perform a read
+                    i2c2_state = S_MASTER_10BIT_RESTART;
                 }
                 else
                 {
-                    // read the receive register only when
-                    // we are ready for the next transaction.
-                    // this one is a dummy read
-                    dummy = I2C2_RECEIVE_REG;
-                    
-                    // it is a read, go to transmit mode
-                    
-                    I2C2_StatusCallback(I2C2_SLAVE_TRANSMIT_REQUEST_DETECTED);
-
-                    // during this portion, the master is expecting the
-                    // slave for a reply. So the returned status of
-                    // the callback at this point cannot be used to 
-                    // delay the reply if needed.
-                    // In other words, the slave has to reply to the master.
-                    // Therefore, the transmit will be performed.
-                    
-                    I2C2_TransmitProcess();
-                    i2c2_slave_state = S_SLAVE_TRANSMIT_MODE;
+                    // this is a write continue writing data
+                    i2c2_state = S_MASTER_SEND_DATA;
                 }
-
             }
 
-            else if
-               (
-                    // case of 10-bit high address detected
-                    (   (I2C2_10_BIT_ADDRESS_ENABLE_BIT   == 1)  &&
-                        (I2C2_DATA_NOT_ADDRESS_STATUS_BIT == 0)
-                    )
-               )
+            break;
+
+        case S_MASTER_10BIT_RESTART:
+
+            if(I2C2_ACKNOWLEDGE_STATUS_BIT)
             {
-                if (I2C2_READ_NOT_WRITE_STATUS_BIT == 0)
-                {
-                    // it is the detection of high byte address of 
-                    // 10-bit address, go to detection of low byte address
-                    prior_address_match = false;
-                    i2c2_slave_state = S_SLAVE_LOW_BYTE_ADDRESS_DETECT;
+                i2c2_object.i2cErrors++;
+                I2C2_Stop(I2C2_MESSAGE_ADDRESS_NO_ACK);
+            }
+            else
+            {
+                // ACK Status is good
+                // restart the bus
+                I2C2_REPEAT_START_CONDITION_ENABLE_BIT = 1;
 
+                // fudge the address so S_MASTER_SEND_ADDR works correctly
+                // we only do this on a 10-bit address resend
+                i2c_address = 0x00F0 | ((i2c_address >> 8) & 0x0006);
+
+                // set the R/W flag
+                i2c_address |= 0x0001;
+
+                // set the address restart flag so we do not change the address
+                i2c_10bit_address_restart = 1;
+
+                // Resend the address as a read
+                i2c2_state = S_MASTER_SEND_ADDR;
+            }
+
+            break;
+
+        case S_MASTER_SEND_ADDR:
+
+            /* Start has been sent, send the address byte */
+
+            /* Note: 
+                On a 10-bit address resend (done only during a 10-bit
+                device read), the original i2c_address was modified in
+                S_MASTER_10BIT_RESTART state. So the check if this is
+                a 10-bit address will fail and a normal 7-bit address
+                is sent with the R/W bit set to read. The flag
+                i2c_10bit_address_restart prevents the  address to
+                be re-written.
+             */
+            if(i2c_10bit_address_restart != 1)
+            {
+                // extract the information for this message
+                i2c_address    = p_i2c2_trb_current->address;
+                pi2c_buf_ptr   = p_i2c2_trb_current->pbuffer;
+                i2c_bytes_left = p_i2c2_trb_current->length;
+            }
+            else
+            {
+                // reset the flag so the next access is ok
+                i2c_10bit_address_restart = 0;
+            }
+
+            // check for 10-bit address
+            if(i2c_address > 0x00FF)
+            {
+                // we have a 10 bit address
+                // send bits<9:8>
+                // mask bit 0 as this is always a write
+                I2C2_TRANSMIT_REG = 0xF0 | ((i2c_address >> 8) & 0x0006);
+                i2c2_state = S_MASTER_SEND_ADDR_10BIT_LSB;
+            }
+            else
+            {
+                // Transmit the address
+                I2C2_TRANSMIT_REG = i2c_address;
+                if(i2c_address & 0x01)
+                {
+                    // Next state is to wait for address to be acked
+                    i2c2_state = S_MASTER_ACK_ADDR;
                 }
-                else // if (I2C2_READ_NOT_WRITE_STATUS_BIT == 1)
+                else
                 {
-                    if (prior_address_match == true)
+                    // Next state is transmit
+                    i2c2_state = S_MASTER_SEND_DATA;
+                }
+            }
+            break;
+
+        case S_MASTER_SEND_DATA:
+
+            // Make sure the previous byte was acknowledged
+            if(I2C2_ACKNOWLEDGE_STATUS_BIT)
+            {
+                // Transmission was not acknowledged
+                i2c2_object.i2cErrors++;
+
+                // Reset the Ack flag
+                I2C2_ACKNOWLEDGE_STATUS_BIT = 0;
+
+                // Send a stop flag and go back to idle
+                I2C2_Stop(I2C2_DATA_NO_ACK);
+
+            }
+            else
+            {
+                // Did we send them all ?
+                if(i2c_bytes_left-- == 0U)
+                {
+                    // yup sent them all!
+
+                    // update the trb pointer
+                    p_i2c2_trb_current++;
+
+                    // are we done with this string of requests?
+                    if(--i2c2_trb_count == 0)
                     {
-                        // it is the detection of high byte
-                        // address of 10-bit address, but the next
-                        // transaction is read transaction (so it
-                        // is a restart).
-                        // set the transmit register with the data
-                        // to transmit then go to transmit mode
-
-                        I2C2_StatusCallback(I2C2_SLAVE_TRANSMIT_REQUEST_DETECTED);
-
-                        // during this portion, the master is expecting the
-                        // slave for a reply. So the returned status of
-                        // the callback at this point cannot be used to
-                        // delay the reply if needed.
-                        // In other words, the slave has to reply to the master.
-                        // Therefore, the transmit will be performed.
-
-                        I2C2_TransmitProcess();
-                        i2c2_slave_state = S_SLAVE_TRANSMIT_MODE;
+                        I2C2_Stop(I2C2_MESSAGE_COMPLETE);
                     }
                     else
                     {
-                        // it is the detection of high byte address of
-                        // 10-bit address, but next transaction is a write.
-                        // go to detection of low byte address
-                        prior_address_match = false;
-                        i2c2_slave_state = S_SLAVE_LOW_BYTE_ADDRESS_DETECT;
+                        // no!, there are more TRB to be sent.
+                        //I2C2_START_CONDITION_ENABLE_BIT = 1;
+
+                        // In some cases, the slave may require
+                        // a restart instead of a start. So use this one
+                        // instead.
+                        I2C2_REPEAT_START_CONDITION_ENABLE_BIT = 1;
+
+                        // start the i2c request
+                        i2c2_state = S_MASTER_SEND_ADDR;
 
                     }
                 }
-
-                // dummy read is needed
-                dummy = I2C2_RECEIVE_REG;
-            }
-
-            // this if statement is to make sure we only save incoming
-            // data when we are truly in receiving mode
-            if (i2c2_slave_state == S_SLAVE_RECEIVE_MODE)
-            {
-                // case of data received
-                if (I2C2_DATA_NOT_ADDRESS_STATUS_BIT == 1)
+                else
                 {
-                    // check if we are overflowing the receive buffer
-                    if (I2C2_RECEIVE_OVERFLOW_STATUS_BIT != 1)
-                    {
-                        I2C2_ReceiveProcess();
-                        not_busy = I2C2_StatusCallback(I2C2_SLAVE_RECEIVED_DATA_DETECTED);
-                    }
-                    else
-                    {
-                        // overflow detected!
-                        // read the buffer to reset the buffer full flag
-                        // and clear the overflow bit
-                        // then do nothing so the master
-                        // will resend the data
-                        dummy = I2C2_RECEIVE_REG;
-                        I2C2_RECEIVE_OVERFLOW_STATUS_BIT = 0;
-                    }
+                    // Grab the next data to transmit
+                    I2C2_TRANSMIT_REG = *pi2c_buf_ptr++;
                 }
             }
-
             break;
 
-        case S_SLAVE_LOW_BYTE_ADDRESS_DETECT:
-            // Note that this state will only get
-            // executed when 10-bit address is set
+        case S_MASTER_ACK_ADDR:
 
-            // we send receive request but we do not actually know
-            // if the next one is a data from master since the 
-            // next one can be a restart with a transmit request.
-            // When that happens, the next state will take care of it.
-            // This is just the nature of i2c bus protocol.
-            not_busy = I2C2_StatusCallback(I2C2_SLAVE_10BIT_RECEIVE_REQUEST_DETECTED);
-
-            // set this flag to indicate we have
-            // full 10-bit address detection
-            prior_address_match = true;
-
-            if (not_busy)
+            /* Make sure the previous byte was acknowledged */
+            if(I2C2_ACKNOWLEDGE_STATUS_BIT)
             {
-                // dummy read is needed
-                dummy = I2C2_RECEIVE_REG;
+
+                // Transmission was not acknowledged
+                i2c2_object.i2cErrors++;
+
+                // Send a stop flag and go back to idle
+                I2C2_Stop(I2C2_MESSAGE_ADDRESS_NO_ACK);
+
+                // Reset the Ack flag
+                I2C2_ACKNOWLEDGE_STATUS_BIT = 0;
             }
-
-            i2c2_slave_state = S_SLAVE_RECEIVE_MODE;
-
-            break;
-
-        case S_SLAVE_TRANSMIT_MODE:
-
-            // this is the state where an ACK or NACK is expected
-            // to occur after the slave has placed data to the
-            // transmit register.
-
-            // if the transaction was ACK'ed, more data needs to be sent
-            // if the transaction was NACK'ed then we don't need to send
-            // more data
-            if (I2C2_ACKNOWLEDGE_STATUS_BIT == 0)
+            else
             {
-                // prepare next data
-                I2C2_StatusCallback(I2C2_SLAVE_TRANSMIT_REQUEST_DETECTED);
-
-                // transmit more data
-                I2C2_TransmitProcess();
-                
-            }
-            else //if (I2C2_ACKNOWLEDGE_STATUS_BIT == 1)
-            {
-                // no more data to be sent so we go to idle state
-                i2c2_slave_state = S_SLAVE_IDLE;
+                I2C2_RECEIVE_ENABLE_BIT = 1;
+                i2c2_state = S_MASTER_ACK_RCV_DATA;
             }
             break;
 
+        case S_MASTER_RCV_DATA:
+
+            /* Acknowledge is completed.  Time for more data */
+
+            // Next thing is to ack the data
+            i2c2_state = S_MASTER_ACK_RCV_DATA;
+
+            // Set up to receive a byte of data
+            I2C2_RECEIVE_ENABLE_BIT = 1;
+
+            break;
+
+        case S_MASTER_ACK_RCV_DATA:
+
+            // Grab the byte of data received and acknowledge it
+            *pi2c_buf_ptr++ = I2C2_RECEIVE_REG;
+
+            // Check if we received them all?
+            if(--i2c_bytes_left)
+            {
+
+                /* No, there's more to receive */
+
+                // No, bit 7 is clear.  Data is ok
+                // Set the flag to acknowledge the data
+                I2C2_ACKNOWLEDGE_DATA_BIT = 0;
+
+                // Wait for the acknowledge to complete, then get more
+                i2c2_state = S_MASTER_RCV_DATA;
+            }
+            else
+            {
+
+                // Yes, it's the last byte.  Don't ack it
+                // Flag that we will nak the data
+                I2C2_ACKNOWLEDGE_DATA_BIT = 1;
+
+                I2C2_FunctionComplete();
+            }
+
+            // Initiate the acknowledge
+            I2C2_ACKNOWLEDGE_ENABLE_BIT = 1;
+            break;
+
+        case S_MASTER_RCV_STOP:                
+        case S_MASTER_SEND_STOP:
+
+            // Send the stop flag
+            I2C2_Stop(I2C2_MESSAGE_COMPLETE);
+            break;
 
         default:
-            // should never happen, if we ever get here stay here forever
-            while(1);
+
+            // This case should not happen, if it does then
+            // terminate the transfer
+            i2c2_object.i2cErrors++;
+            I2C2_Stop(I2C2_LOST_STATE);
             break;
+
     }
-
-
-    // clear the slave interrupt flag
-    IFS3bits.SI2C2IF = 0;
-
 }
 
-void I2C2_ReadPointerSet(uint8_t *p)
+static void I2C2_FunctionComplete(void)
 {
-    p_i2c2_read_pointer = p;
-}
 
-void I2C2_WritePointerSet(uint8_t *p)
-{
-    p_i2c2_write_pointer = p;
-}
+    // update the trb pointer
+    p_i2c2_trb_current++;
 
-uint8_t *I2C2_ReadPointerGet(void)
-{
-    return (p_i2c2_read_pointer);
-}
-
-uint8_t *I2C2_WritePointerGet(void)
-{
-    return (p_i2c2_write_pointer);
-}
-
-void I2C2_SlaveAddressMaskSet(
-                                uint16_t mask)
-{
-    I2C2_MASK_REG = mask;
-}
-
-void I2C2_SlaveAddressSet(
-                                uint16_t address)
-{
-    if (address > 0x7F)
+    // are we done with this string of requests?
+    if(--i2c2_trb_count == 0)
     {
-        // use 10 bit address
-        I2C2_10_BIT_ADDRESS_ENABLE_BIT = true;
+        i2c2_state = S_MASTER_SEND_STOP;
     }
     else
     {
-        // use 7 bit address
-        I2C2_10_BIT_ADDRESS_ENABLE_BIT = false;
+        i2c2_state = S_MASTER_RESTART;
     }
-    i2c2_slave_state = S_SLAVE_IDLE;
-    I2C2_ADDRESS_REG = address;
 
 }
 
-inline void __attribute__ ((always_inline)) I2C2_TransmitProcess(void)
+static void I2C2_Stop(I2C2_MESSAGE_STATUS completion_code)
 {
-    // get the data to be transmitted
+    // then send a stop
+    I2C2_STOP_CONDITION_ENABLE_BIT = 1;
 
-    // sanity check (to avoid stress)
-    if (p_i2c2_read_pointer == NULL)
-        return;
-
-    I2C2_TRANSMIT_REG = *p_i2c2_read_pointer;
-
-    // set the SCL clock to be released
-    I2C2_RELEASE_SCL_CLOCK_CONTROL_BIT = 1;
-
-}
-
-inline void __attribute__ ((always_inline)) I2C2_ReceiveProcess(void)
-{   
-    // store the received data 
-    
-    // sanity check (to avoid stress)
-    if (p_i2c2_write_pointer == NULL)
-        return;
-
-    *p_i2c2_write_pointer = I2C2_RECEIVE_REG;
-
-}
-
-/* Note: This is an example of the I2C2_StatusCallback()
-         implementation. This is an emulated EEPROM Memory
-         configured to act as a I2C Slave Device.
-         For specific slave device implementation, remove
-         or modify this function to the specific slave device
-         behavior.
-*/
-
-static uint8_t i2c2_slaveWriteData = 0xAA;
-
-bool I2C2_StatusCallback(I2C2_SLAVE_DRIVER_STATUS status)
-{
-
-    // this emulates the slave device memory where data written to slave
-    // is placed and data read from slave is taken
-    /*
-     Emulate EEPORM default memory size is 64bytes
- 
-     Emulate EEPORM Read/Write Instruction:
-     --------------------------------------     
-     Byte Write Instruction:
-     |Start|slave Addr + w|Ack|AddrHighByte|Ack|AddrLowByte|Ack|data|Nack|Stop|
-     
-     Page Write Instruction:
-     |Start|slave Addr + w|Ack|AddrHighByte|Ack|AddrLowByte|Ack|dataByte n|Ack|...|data Byte n+x|Nack|Stop|
-     
-     Byte Read Instruction:
-     |Start|slave Addr + r|Ack|AddrHighByte|Ack|AddrLowByte|Ack|data|Nack|Stop|
-
-     Page Read Instruction:
-     |Start|slave Addr + r|Ack|AddrHighByte|Ack|AddrLowByte|Ack|dataByte n|Ack|...|dataByte n+x|Nack|Stop|
-    */
-    
-    static uint8_t EMULATE_EEPROM_Memory[EMULATE_EEPROM_SIZE] =
-            {
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            };
-
-    static uint16_t address, addrByteCount;
-    static bool     addressState = true;
-
-    switch (status)
+    // make sure the flag pointer is not NULL
+    if (p_i2c2_current->pTrFlag != NULL)
     {
-        case I2C2_SLAVE_TRANSMIT_REQUEST_DETECTED:
-            // set up the slave driver buffer transmit pointer
-            I2C2_ReadPointerSet(&EMULATE_EEPROM_Memory[address++]);
-            if(address >= EMULATE_EEPROM_SIZE) {
-                address = 0;
-            }
-            break;
-
-        case I2C2_SLAVE_RECEIVE_REQUEST_DETECTED:
-
-            addrByteCount = 0;
-            addressState = true;
-
-            // set up the slave driver buffer receive pointer
-            I2C2_WritePointerSet(&i2c2_slaveWriteData);
-            break;
-
-        case I2C2_SLAVE_RECEIVED_DATA_DETECTED:
-
-            if (addressState == true)
-            {
-                // get the address of the memory being written
-                if (addrByteCount == 0)
-                {
-                    address = (i2c2_slaveWriteData << 8) & 0xFF00;
-                    addrByteCount++;
-                }
-                else if (addrByteCount == 1)
-                {
-                    address = address | i2c2_slaveWriteData;
-                    addrByteCount = 0;
-                    addressState = false;
-                }
-                
-                if(address >= EMULATE_EEPROM_SIZE) {
-                    address = EMULATE_EEPROM_SIZE;
-                }
-            }
-            else // if (addressState == false)
-            {
-                // set the memory with the received data
-                EMULATE_EEPROM_Memory[address++] = i2c2_slaveWriteData;
-                if(address >= EMULATE_EEPROM_SIZE) {
-                    address = 0;
-                }
-            }
-
-            break;
-
-        case I2C2_SLAVE_10BIT_RECEIVE_REQUEST_DETECTED:
-
-            // do something here when 10-bit address is detected
-
-            // 10-bit address is detected
-
-            break;
-
-        default:
-            break;
-
+        // update the flag with the completion code
+        *(p_i2c2_current->pTrFlag) = completion_code;
     }
 
-    return true;
+    // Done, back to idle
+    i2c2_state = S_MASTER_IDLE;
+    
 }
 
+void I2C2_MasterWrite(
+                                uint8_t *pdata,
+                                uint8_t length,
+                                uint16_t address,
+                                I2C2_MESSAGE_STATUS *pstatus)
+{
+    static I2C2_TRANSACTION_REQUEST_BLOCK   trBlock;
+
+    // check if there is space in the queue
+    if (i2c2_object.trStatus.s.full != true)
+    {
+        I2C2_MasterWriteTRBBuild(&trBlock, pdata, length, address);
+        I2C2_MasterTRBInsert(1, &trBlock, pstatus);
+    }
+    else
+    {
+        *pstatus = I2C2_MESSAGE_FAIL;
+    }
+
+}                           
+
+void I2C2_MasterRead(
+                                uint8_t *pdata,
+                                uint8_t length,
+                                uint16_t address,
+                                I2C2_MESSAGE_STATUS *pstatus)
+{
+    static I2C2_TRANSACTION_REQUEST_BLOCK   trBlock;
 
 
+    // check if there is space in the queue
+    if (i2c2_object.trStatus.s.full != true)
+    {
+        I2C2_MasterReadTRBBuild(&trBlock, pdata, length, address);
+        I2C2_MasterTRBInsert(1, &trBlock, pstatus);
+    }
+    else
+    {
+        *pstatus = I2C2_MESSAGE_FAIL;
+    }
 
+}       
+
+void I2C2_MasterTRBInsert(
+                                uint8_t count,
+                                I2C2_TRANSACTION_REQUEST_BLOCK *ptrb_list,
+                                I2C2_MESSAGE_STATUS *pflag)
+{
+
+    // check if there is space in the queue
+    if (i2c2_object.trStatus.s.full != true)
+    {
+        *pflag = I2C2_MESSAGE_PENDING;
+
+        i2c2_object.pTrTail->ptrb_list = ptrb_list;
+        i2c2_object.pTrTail->count     = count;
+        i2c2_object.pTrTail->pTrFlag   = pflag;
+        i2c2_object.pTrTail++;
+
+        // check if the end of the array is reached
+        if (i2c2_object.pTrTail == (i2c2_tr_queue + I2C2_CONFIG_TR_QUEUE_LENGTH))
+        {
+            // adjust to restart at the beginning of the array
+            i2c2_object.pTrTail = i2c2_tr_queue;
+        }
+
+        // since we added one item to be processed, we know
+        // it is not empty, so set the empty status to false
+        i2c2_object.trStatus.s.empty = false;
+
+        // check if full
+        if (i2c2_object.pTrHead == i2c2_object.pTrTail)
+        {
+            // it is full, set the full status to true
+            i2c2_object.trStatus.s.full = true;
+        }
+
+        // for interrupt based
+        if(i2c2_state == S_MASTER_IDLE)
+        {    
+            // force the task to run since we know that the queue has
+            // something that needs to be sent
+            IFS3bits.MI2C2IF = 1;
+        }           
+        
+    }
+    else
+    {
+        *pflag = I2C2_MESSAGE_FAIL;
+    }
+
+}      
+                                
+void I2C2_MasterReadTRBBuild(
+                                I2C2_TRANSACTION_REQUEST_BLOCK *ptrb,
+                                uint8_t *pdata,
+                                uint8_t length,
+                                uint16_t address)
+{
+    ptrb->address  = address << 1;
+    // make this a read
+    ptrb->address |= 0x01;
+    ptrb->length   = length;
+    ptrb->pbuffer  = pdata;
+}
+                                
+void I2C2_MasterWriteTRBBuild(
+                                I2C2_TRANSACTION_REQUEST_BLOCK *ptrb,
+                                uint8_t *pdata,
+                                uint8_t length,
+                                uint16_t address)
+{
+    ptrb->address = address << 1;
+    ptrb->length  = length;
+    ptrb->pbuffer = pdata;
+}
+
+bool I2C2_MasterQueueIsEmpty(void)
+{
+    return((bool)i2c2_object.trStatus.s.empty);
+}
+
+bool I2C2_MasterQueueIsFull(void)
+{
+    return((bool)i2c2_object.trStatus.s.full);
+}
+
+/**
+ End of File
+*/

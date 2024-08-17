@@ -25,6 +25,7 @@
         <itemPath>mcc_generated_files/clock.h</itemPath>
         <itemPath>mcc_generated_files/mcc.h</itemPath>
         <itemPath>mcc_generated_files/pin_manager.h</itemPath>
+        <itemPath>mcc_generated_files/tmr2.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -53,10 +54,12 @@
         <itemPath>mcc_generated_files/tmr1.c</itemPath>
         <itemPath>mcc_generated_files/pin_manager.c</itemPath>
         <itemPath>mcc_generated_files/interrupt_manager.c</itemPath>
+        <itemPath>mcc_generated_files/tmr2.c</itemPath>
       </logicalFolder>
       <logicalFolder name="src" displayName="src" projectFiles="true">
         <itemPath>src/Myvalue.c</itemPath>
         <itemPath>src/pmbus_stack.c</itemPath>
+        <itemPath>src/eeprom.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
     </logicalFolder>
@@ -238,6 +241,11 @@
         <property key="relaxed-math" value="false"/>
         <property key="save-temps" value="false"/>
       </C30Global>
+      <snap>
+        <property key="memories.programmemory.ranges" value="0-15eff"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/Users/Astbel/Desktop/HKSP_PIC24FJ128GL305/HKS_PIC24FJ128GL305.X/debug/default/HKS_PIC24FJ128GL305_ptg"/>
+      </snap>
     </conf>
   </confs>
 </configurationDescriptor>
