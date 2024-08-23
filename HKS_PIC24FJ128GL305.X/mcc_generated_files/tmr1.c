@@ -161,35 +161,35 @@ uint16_t TMR1_Counter16BitGet( void )
 }
 
 
-void __attribute__ ((weak)) TMR1_CallBack(void)
-{
-  IFS0bits.T1IF = 0;
-  TMR1 = 0;
-  if ((I2C1STATbits.P == 1) && (IFS1bits.SI2C1IF == 0))
-  {
-    T1CONbits.TON = 0;
+// void __attribute__ ((weak)) TMR1_CallBack(void)
+// {
+//   IFS0bits.T1IF = 0;
+//   TMR1 = 0;
+//   if ((I2C1STATbits.P == 1) && (IFS1bits.SI2C1IF == 0))
+//   {
+//     T1CONbits.TON = 0;
 
-    if (((i2c_flags.wr_prot == 1) || (protocolCMD == 0x0)) && (global_flags.comm_errors == 0) && (protocolCMD != 0x4))
-    {
-      if (codeCMD == 0x3) /* Example of call to an APP function */
-      {
-        Clear_faults();
-      }
+//     if (((i2c_flags.wr_prot == 1) || (protocolCMD == 0x0)) && (global_flags.comm_errors == 0) && (protocolCMD != 0x4))
+//     {
+//       if (codeCMD == 0x3) /* Example of call to an APP function */
+//       {
+//         Clear_faults();
+//       }
 
-      global_flags.ready_to_copy = 1; /* If command was write transaction setting this flag allows
-                          data to be copied from buffer to RAM */
-      if (global_flags.ready_to_copy == 1)
-      {
-        global_flags.ready_to_copy = 0;
-        CopyBufferInRam();
-      }
-    }
+//       global_flags.ready_to_copy = 1; /* If command was write transaction setting this flag allows
+//                           data to be copied from buffer to RAM */
+//       if (global_flags.ready_to_copy == 1)
+//       {
+//         global_flags.ready_to_copy = 0;
+//         CopyBufferInRam();
+//       }
+//     }
 
-    i2c_flags.flag_rw = 0;
+//     i2c_flags.flag_rw = 0;
 
-    I2C1CONLbits.SCLREL = 1; /* Release SCL Clock */
-  } 
-}
+//     I2C1CONLbits.SCLREL = 1; /* Release SCL Clock */
+//   } 
+// }
 
 void  TMR1_SetInterruptHandler(void (* InterruptHandler)(void))
 { 

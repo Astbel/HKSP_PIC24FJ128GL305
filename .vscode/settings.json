@@ -1,6 +1,8 @@
 {
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
-        "pmbus_stack.h": "c"
+        "pmbus_stack.h": "c",
+        "myheader.h": "c",
+        "commands.h": "c"
     }
 }

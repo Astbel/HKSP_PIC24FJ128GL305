@@ -24,8 +24,8 @@ void Init_value(void)
 
     writeBuffer[0] = i2cWrData;
 
-    READ_VIN[0] =0xFF;  //Low
-    READ_VIN[1] =0xA1;  //high
+   //  READ_VOUT[0] =0xFF;  //Low
+   //  READ_VOUT[1] =0xA1;  //high
 
    
 }
