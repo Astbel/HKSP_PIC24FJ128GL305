@@ -41,12 +41,21 @@ typedef struct
     uint16_t pmbus_data;
 }ADC_SCAN;
 
+typedef struct {
+    uint16_t data;
+    uint8_t *buffer;
+    FormatType linear_select;
+    int8 exponent;
+    Pmbus_Martrix_Index pmbus_index;
+} UpdateParams;
+
 /*-----------------------------------------------
  Struct Enum  Uion
 -----------------------------------------------*/
 extern Flag global_flags;
 extern PMBUS_connect i2c_flags;
 extern FormatType   Linear_select;
+extern UpdateParams Pmbus_Updata;
 /*-----------------------------------------------
     Ptr Struct Enum  Uion
 -----------------------------------------------*/

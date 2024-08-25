@@ -72,10 +72,25 @@ void __attribute__((weak)) TMR1_CallBack(void)
  *
  * Note:            None
  *******************************************************************/
-void __attribute__ ((weak)) TMR2_CallBack(void)
+void TMR2_CallBack(void)
 {
-   
-    Update_Martix_Buffer_Data(115,READ_VOUT,LINEAR16,9,READ_VOUT_COMMAND_0x8B);
-    Update_Martix_Buffer_Data(115,READ_VIN,LINEAR11,3,READ_VIN_COMMAND_0x88);
+    // 定义需要更新的参数
+    UpdateParams update_params[] = 
+    {
+        {115, READ_VOUT, LINEAR16, 9, READ_VOUT_COMMAND_0x8B},
+        {115, READ_VIN, LINEAR11, 3, READ_VIN_COMMAND_0x88},
+        // 可以继续添加更多的更新参数...
+    };
+
+    // 遍历并调用 Update_Martix_Buffer_Data
+    for (int i = 0; i < sizeof(update_params) / sizeof(UpdateParams); i++) {
+        Update_Martix_Buffer_Data(
+            update_params[i].data,
+            update_params[i].buffer,
+            update_params[i].linear_select,
+            update_params[i].exponent,
+            update_params[i].pmbus_index
+        );
+    }
 }
 

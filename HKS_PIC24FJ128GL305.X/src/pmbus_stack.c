@@ -69,6 +69,7 @@ Flag *PTR_global_flags;
 PMBUS_connect *PTR_i2c_flags;
 ADC_SCAN Adc_raw_data;
 Pmbus_Martrix_Index Pmbus_1_3_Index;
+UpdateParams Pmbus_Updata;
 /************************************************/
 
 uint8_t buffer[MAX_BYTES + 1];
