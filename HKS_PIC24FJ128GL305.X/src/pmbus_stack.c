@@ -62,14 +62,15 @@ uint8_t byteNr;
 /************************************************/
 Flag global_flags = {0, 0, 0};
 PMBUS_connect i2c_flags = {0, 0};
+Pmbus_Martrix_Index Pmbus_1_3_Index;
+UpdateParams Pmbus_Updata;
 /************************************************/
 /*                   PTR                        */
 /************************************************/
 Flag *PTR_global_flags;
 PMBUS_connect *PTR_i2c_flags;
-ADC_SCAN Adc_raw_data;
-Pmbus_Martrix_Index Pmbus_1_3_Index;
-UpdateParams Pmbus_Updata;
+/************************************************/
+/*                  Buffer                      */
 /************************************************/
 
 uint8_t buffer[MAX_BYTES + 1];
@@ -469,8 +470,8 @@ const unsigned char CMDtoMatrix[MATRIX_NUMS] =
     2,                    // 0x2 	ON_OFF_CONFIG
     3,                    // 0x3 	CLEAR_FAULTS
     4,                    // 0x4 	PHASE code
-    UNSUPPORTED_CMD_CODE,                    // 0x5 	PAGE_PLUS_WRITE
-    UNSUPPORTED_CMD_CODE,                    // 0x6 	PAGE_PLUS_READ
+    UNSUPPORTED_CMD_CODE, // 0x5 	PAGE_PLUS_WRITE
+    UNSUPPORTED_CMD_CODE, // 0x6 	PAGE_PLUS_READ
     UNSUPPORTED_CMD_CODE, // 0x7 	ZONE_CONFIG
     UNSUPPORTED_CMD_CODE, // 0x8 	ZONE_ACTIVE
     UNSUPPORTED_CMD_CODE, // 0x9 	cmd code
@@ -481,45 +482,45 @@ const unsigned char CMDtoMatrix[MATRIX_NUMS] =
     UNSUPPORTED_CMD_CODE, // 0xe 	cmd code
     UNSUPPORTED_CMD_CODE, // 0xf 	cmd code
     5,                    // 0x10 	WRITE_POTECT 
-    6,                   // 0x11 	STORE_DEFAULT_ALL 
-    7,                   // 0x12 	RESTORE_DEFAULT_ALL 
-    UNSUPPORTED_CMD_CODE,                   // 0x13 	STORE_DEFAULT_CODE
-    UNSUPPORTED_CMD_CODE,                   // 0x14 	RESTORE_DEFAULT_CODE
-    UNSUPPORTED_CMD_CODE,                   // 0x15 	STORE_USER_ALL
-    UNSUPPORTED_CMD_CODE,                   // 0x16 	RESTORE_USER_ALL
-    UNSUPPORTED_CMD_CODE,                   // 0x17 	STORE_USER_CODE
-    UNSUPPORTED_CMD_CODE,                   // 0x18 	RESTORE_USER_CODE
-    UNSUPPORTED_CMD_CODE,                    // 0x19   CAPABILITY
-    UNSUPPORTED_CMD_CODE,                    // 0x1a 	QUERY_COMMAND
+    6,                    // 0x11 	STORE_DEFAULT_ALL 
+    7,                    // 0x12 	RESTORE_DEFAULT_ALL 
+    UNSUPPORTED_CMD_CODE, // 0x13 	STORE_DEFAULT_CODE
+    UNSUPPORTED_CMD_CODE, // 0x14 	RESTORE_DEFAULT_CODE
+    UNSUPPORTED_CMD_CODE, // 0x15 	STORE_USER_ALL
+    UNSUPPORTED_CMD_CODE, // 0x16 	RESTORE_USER_ALL
+    UNSUPPORTED_CMD_CODE, // 0x17 	STORE_USER_CODE
+    UNSUPPORTED_CMD_CODE, // 0x18 	RESTORE_USER_CODE
+    UNSUPPORTED_CMD_CODE, // 0x19   CAPABILITY
+    UNSUPPORTED_CMD_CODE, // 0x1a 	QUERY_COMMAND
     UNSUPPORTED_CMD_CODE, // 0x1b 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x1c 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x1d 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x1e 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x1f 	cmd code
-    8,                 // 0x20 	VOUT_MODE
-    9,                 // 0x21 	VOUT code
-    UNSUPPORTED_CMD_CODE,                 // 0x22 	VOUT_TRIM
-    UNSUPPORTED_CMD_CODE,                 // 0x23 	VOUT_CAL_OFFSET
-    10,                 // 0x24 	VOUT_MAX
-    11,                 // 0x25 	VOUT_MARGIN_HIGH
-    12,                 // 0x26 	VOUT_MARGIN_LOW
-    13,                 // 0x27 	VOUT_TRANSITION_RATE
-    14,                 // 0x28 	VOUT_DROOP
-    15,                 // 0x29 	VOUT_SCALE_LOOP
-    16,                 // 0x2a 	VOUT_SCALE_MONITOR
-    17,                 // 0x2b 	VOUT_MIN
+    8,                    // 0x20 	VOUT_MODE
+    9,                    // 0x21 	VOUT code
+    UNSUPPORTED_CMD_CODE, // 0x22 	VOUT_TRIM
+    UNSUPPORTED_CMD_CODE, // 0x23 	VOUT_CAL_OFFSET
+    10,                   // 0x24 	VOUT_MAX
+    11,                   // 0x25 	VOUT_MARGIN_HIGH
+    12,                   // 0x26 	VOUT_MARGIN_LOW
+    13,                   // 0x27 	VOUT_TRANSITION_RATE
+    14,                   // 0x28 	VOUT_DROOP
+    15,                   // 0x29 	VOUT_SCALE_LOOP
+    16,                   // 0x2a 	VOUT_SCALE_MONITOR
+    17,                   // 0x2b 	VOUT_MIN
     UNSUPPORTED_CMD_CODE, // 0x2c 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x2d 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x2e 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x2f 	cmd code
-    UNSUPPORTED_CMD_CODE,                   // 0x30 	COEFICIENTS
+    UNSUPPORTED_CMD_CODE, // 0x30 	COEFICIENTS
     18,                   // 0x31 	POUT_MAX
     19,                   // 0x32 	MAX_DUTY
     20,                   // 0x33 	FREQUENCY_SWITCH
     21,                   // 0x34 	POWER_MODE
     22,                   // 0x35 	VIN_ON 
     23,                   // 0x36 	VIN_OFF 
-    UNSUPPORTED_CMD_CODE,                   // 0x37 	INTERLEAVE
+    UNSUPPORTED_CMD_CODE, // 0x37 	INTERLEAVE
     24,                   // 0x38 	IOUT_CAL_GAIN
     25,                   // 0x39 	IOUT_CAL_OFFSET
     26,                   // 0x3a 	FAN_CONFIG_1_2
@@ -585,33 +586,33 @@ const unsigned char CMDtoMatrix[MATRIX_NUMS] =
     UNSUPPORTED_CMD_CODE, // 0x76 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x77 	cmd code
     UNSUPPORTED_CMD_CODE, // 0x78 	cmd code
-    73,                    // 0x79	STATUS_WORD_COMMAND
-    74,                    // 0x7a	STATUS_VOUT_COMMAND
-    75,                    // 0x7b	STATUS_IOUT_COMMAND
-    76,                    // 0x7c	STATUS_INPUT_COMMAND
-    77,                    // 0x7d	STATUS_TEMP_COMMAND
+    73,                   // 0x79	STATUS_WORD_COMMAND
+    74,                   // 0x7a	STATUS_VOUT_COMMAND
+    75,                   // 0x7b	STATUS_IOUT_COMMAND
+    76,                   // 0x7c	STATUS_INPUT_COMMAND
+    77,                   // 0x7d	STATUS_TEMP_COMMAND
     78,                   // 0x7e	STATUS_CML_COMMAND
     79,                   // 0x7f	STATUS_OTHER_COMMAND
     80,                   // 0x80 	STATUS_MFR_SPECIFIC
     81,                   // 0x81	STATUS_FAN_1_2_COMMAND
     82,                   // 0x82	STATUS_FAN_3_4_COMMAND
     83,                   // 0x83 	READ_KWH_IN 
-    84,                  // 0x84 	READ_KWH_OUT
-    85,                  // 0x85 	READ_KWH_CONFIG
-    86,                  // 0x86 	READ_EIN
-    87,                  // 0x87 	READ_EOUT
-    88,                  // 0x88	READ_VIN_COMMAND
-    89,                  // 0x89	READ_IIN_COMMAND
-    90,                  // 0x8a 	READ_VCAP_COMMAND
-    91,                  // 0x8b	READ_VOUT_COMMAND
-    92,                  // 0x8c	READ_IOUT_COMMAND
-    93,                  // 0x8d	READ_TEMP1_COMMAND
-    94,                  // 0x8e	READ_TEMP2_COMMAND
-    95,                  // 0x8f 	READ_TEMP3_COMMAND
-    96,                  // 0x90	READ_FAN_SPEED_1_COMMAND
-    97,                  // 0x91	READ_FAN_SPEED_2_COMMAND
-    98,                  // 0x92 	READ_FAN_SPEED_3_COMMAND
-    99,                  // 0x93 	READ_FAN_SPEED_4_COMMAND
+    84,                   // 0x84 	READ_KWH_OUT
+    85,                   // 0x85 	READ_KWH_CONFIG
+    86,                   // 0x86 	READ_EIN
+    87,                   // 0x87 	READ_EOUT
+    88,                   // 0x88	READ_VIN_COMMAND
+    89,                   // 0x89	READ_IIN_COMMAND
+    90,                   // 0x8a 	READ_VCAP_COMMAND
+    91,                   // 0x8b	READ_VOUT_COMMAND
+    92,                   // 0x8c	READ_IOUT_COMMAND
+    93,                   // 0x8d	READ_TEMP1_COMMAND
+    94,                   // 0x8e	READ_TEMP2_COMMAND
+    95,                   // 0x8f 	READ_TEMP3_COMMAND
+    96,                   // 0x90	READ_FAN_SPEED_1_COMMAND
+    97,                   // 0x91	READ_FAN_SPEED_2_COMMAND
+    98,                   // 0x92 	READ_FAN_SPEED_3_COMMAND
+    99,                   // 0x93 	READ_FAN_SPEED_4_COMMAND
     100,                  // 0x94 	READ_DUTY_CYCLE
     101,                  // 0x95 	READ_FREQUENCY
     102,                  // 0x96	READ_POUT_COMMAND
@@ -1183,55 +1184,8 @@ void I2CSlaveHandler(void)
 
         break;
     }
-
-    //   I2C1CONbits.SCLREL = 1;			/* F series Release SCL Clock */
     I2C1CONLbits.SCLREL = 1; /* Release SCL Clock */
 }
-
-/********************************************************************
- * Function:        33F_series_Timer3 ISR/33CK_Timer1
- *
- * PreCondition:    None
- *
- * Input:           None
- *
- * Output:          None
- *
- * Side Effects:    None
- *
- * Overview:        This interruput service routine determines when a
- *				   stop condition has occured and enables buffer to ram
- *				   copy if the command was a write protocol.
- *
- * Note:            None
- *******************************************************************/
-// void __attribute__((__interrupt__, no_auto_psv)) _T1Interrupt()
-// void __attribute__((weak)) TMR1_CallBack(void)
-// {
-//     IFS0bits.T1IF = 0; /* Clear Interrupt Flag */
-//     TMR1 = 0;
-
-//     if ((I2C1STATbits.P == 1) && (IFS1bits.SI2C1IF == 0))
-//     {
-//         T1CONbits.TON = 0;
-
-//         if (((i2c_flags.wr_prot == 1) || (protocolCMD == 0x0)) && (global_flags.comm_errors == 0) && (protocolCMD != BW_BR_PROC_CALL))
-//         {
-//             if (codeCMD == 0x3) /* Example of call to an APP function */
-//             {
-//                 //				Clear_faults();
-//             }
-
-//             global_flags.ready_to_copy = 1; /* If command was write transaction setting this flag allows
-//                                                     data to be copied from buffer to RAM */
-//         }
-
-//         i2c_flags.flag_rw = 0;
-
-//         //		I2C1CONbits.SCLREL = 1;		/*33F series  Release SCL Clock */
-//         I2C1CONLbits.SCLREL = 1; /* Release SCL Clock */
-//     }
-// }
 /********************************************************************
  * Function:        Clear_faults
  *
@@ -1252,7 +1206,7 @@ void I2CSlaveHandler(void)
  *******************************************************************/
 void Clear_faults(void)
 {
-   STATUS_WORD[0] = 0;
+    STATUS_WORD[0] = 0;
     STATUS_WORD[1] = 0;
     STATUS_VOUT[0] = 0;
     STATUS_IOUT[0] = 0;
@@ -1262,21 +1216,6 @@ void Clear_faults(void)
     STATUS_OTHER[0] = 0;
     STATUS_FANS_1_2[0] = 0;
     STATUS_FANS_3_4[0] = 0;
-}
-/********************************************************************
- * Function:        call back function for Timer1
- *
- * Parameter:     uint8_t *pdata    I2C 寫入 data
- *                uint8_t length    Data 大小
- *                uint16_t address  Salver 地址
- *                I2C1_MESSAGE_STATUS *pstatus  I2C狀態
- *
- * Note:            Testting Callback I2C function
- *******************************************************************/
-void I2C_Fun(void)
-{
-
-    // I2C1_MasterWrite(&writeBuffer,1,TEST_ADDR,I2C1_MESSAGE_COMPLETE);
 }
 /********************************************************************
  * Function:        初始化 struct class
@@ -1315,18 +1254,12 @@ void Init_Struct_Fun(void)
  *
  * Note:          
  *******************************************************************/
-uint16_t linear11(uint16_t adcValue,int8 exponent)
+uint16_t linear11(uint16_t real_data,uint8_t exponent)
 {
-    static uint16_t Real_data = 0;
-    uint16_t mantissa = 0;
-    // int exponent = -3;  
-
-    // Convert ADC value back to real voltage value (e.g., in volts).
-    // Real_data = __builtin_muluu(adcValue, Volt_2_CNT);
-    // Adc_raw_data.Vdc =  (adcValue*483)>>12;
-  
+    static uint16_t mantissa = 0;  
+    
     // Adjust Real_data as needed to calculate mantissa.
-    mantissa = adcValue << exponent;
+    mantissa = real_data << exponent;
 
     // Ensure the mantissa fits within 11 bits.
     mantissa &= 0x07FF;
@@ -1382,19 +1315,64 @@ void Update_Martix_Buffer_Data(uint16_t data,uint8_t *buffer,FormatType Linear_s
     static uint16_t convert_data=0;
     if (Linear_select==LINEAR11)
     {
-      Adc_raw_data.pmbus_data = linear11(data,exponent);
+      convert_data = linear11(data,exponent);
     }
     else if (Linear_select==LINEAR16)
     {
-      Adc_raw_data.pmbus_data = linear16(data,exponent);
+      convert_data = linear16(data,exponent);
     }
     
     //ptr  func  linear 11/16
     // convert_data= adc_to_slinear11(data,12);
-    // 高位字節
-    buffer[0] = (Adc_raw_data.pmbus_data >> 8) & 0xFF;
     // 低位字節
-    buffer[1] = Adc_raw_data.pmbus_data & 0xFF;
+    buffer[1] = (convert_data >> 8) & 0xFF;
+    // 高位字節
+    buffer[0] = convert_data & 0xFF;
 
     matrix[Pmbus_1_3_Index].ptrCommandData = buffer;
 }
+/********************************************************************
+ *
+ * PreCondition:    Pmbus_Data_Updata
+ *
+ * Input:          
+ * 
+ * Output:          None
+ *
+ * Side Effects:    None
+ *
+ * Overview:      routine jobs for updatapmbus buffer
+ *
+ * Note:          
+ *******************************************************************/
+void Pmbus_Data_Updata(void)
+{
+     
+    UpdateParams update_params[] = 
+    {
+        {115, READ_VOUT,        LINEAR16, VDC_ARR_EXPONENT,     READ_VOUT_COMMAND_0x8B},
+        {115, READ_VIN,         LINEAR11, VAC_ARR_EXPONENT,     READ_VIN_COMMAND_0x88},
+        {115, READ_TEMP1,       LINEAR11, TEMP_EXPONENT,        READ_TEMP1_COMMAND_0x8D},
+        {115, READ_TEMP2,       LINEAR11, TEMP_EXPONENT,        READ_TEMP2_COMMAND_0x8E},
+        {115, READ_TEMP3,       LINEAR11, TEMP_EXPONENT,        READ_TEMP3_COMMAND_0x8F},
+        {115, READ_POUT,        LINEAR11, POUT_ARR_EXPONENT,    READ_POUT_COMMAND_0x96},
+        {115, READ_PIN,         LINEAR11, PIN_ARR_EXPONENT,     READ_PIN_COMMAND_0x97},
+        {115, READ_FAN_SPEED_1, LINEAR11, FAN_RPM_EXPONENT,     READ_FAN_SPEED_1_COMMAND_0x90},
+
+        // 繼續添加新的CMD...
+    };
+
+    // 遍歷數組 Update_Martix_Buffer_Data
+    for (int i = 0; i < sizeof(update_params) / sizeof(UpdateParams); i++)
+    {
+        Update_Martix_Buffer_Data
+        (
+            update_params[i].data,
+            update_params[i].buffer,
+            update_params[i].linear_select,
+            update_params[i].exponent,
+            update_params[i].pmbus_index
+        );
+    }
+}
+

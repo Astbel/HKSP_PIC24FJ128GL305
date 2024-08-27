@@ -12,7 +12,6 @@
 /*-----------------------------------------------
    value  delcare
 -----------------------------------------------*/
-uint8_t EEPROM_TEST[16];
 uint8_t i2cWrData;
 uint8_t writeBuffer[3];
 /*-----------------------------------------------
@@ -24,8 +23,6 @@ void Init_value(void)
 
     writeBuffer[0] = i2cWrData;
 
-   //  READ_VOUT[0] =0xFF;  //Low
-   //  READ_VOUT[1] =0xA1;  //high
 
    
 }

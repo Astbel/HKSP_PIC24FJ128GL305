@@ -21,27 +21,19 @@ typedef struct
     uint8_t  ready_to_copy;
     uint8_t  comm_errors;
     uint8_t  unsupported_command;
-}Flag ;
-
+}Flag;
 typedef struct 
 {
     uint8_t flag_rw;
     uint8_t wr_prot;
 }PMBUS_connect;
-
-typedef enum {
+typedef enum 
+{
     LINEAR11,
     LINEAR16
 } FormatType;
-
-typedef struct 
+typedef struct
 {
-    uint16_t Vdc;
-    uint16_t Vac;   
-    uint16_t pmbus_data;
-}ADC_SCAN;
-
-typedef struct {
     uint16_t data;
     uint8_t *buffer;
     FormatType linear_select;
@@ -61,7 +53,6 @@ extern UpdateParams Pmbus_Updata;
 -----------------------------------------------*/
 extern Flag *PTR_global_flags;
 extern PMBUS_connect *PTR_i2c_flags;
-extern ADC_SCAN Adc_raw_data;
 /*-----------------------------------------------
     Variable
 -----------------------------------------------*/
@@ -277,10 +268,10 @@ void CopyBufferInRam(void);
 /*-----------------------------------------------
    pmbus function updata rounite
 -----------------------------------------------*/
-uint16_t linear11(uint16_t adcValue,int8 exponent);
+uint16_t linear11(uint16_t real_data, uint8_t exponent);
 uint16_t linear16(uint16_t real_data, uint8_t exponent);
 void Update_Martix_Buffer_Data(uint16_t data,uint8_t *buffer,FormatType Linear_select,int8 exponent,Pmbus_Martrix_Index Pmbus_1_3_Index);
-
+void Pmbus_Data_Updata(void);
 
 #ifdef __cplusplus
 extern "C"

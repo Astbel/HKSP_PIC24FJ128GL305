@@ -61,28 +61,15 @@ int main(void)
     // initialize the device
     SYSTEM_Initialize();
 
-    
-
     Init_Struct_Fun();
 
     ClearCommandData(); /* Clear commands RAM locations */
 
     Init_value();
-//    EEPROM_WriteData(EEPROM_ADDR, startAddress, newData, 16);
+
     while (1) 
     {
-        /*MCHP I2C TEST Write func*/
-
-    // this initial value is important
-    //  writeBuffer[0] = i2cWrData;
-
-    // I2C1_MasterWriteTRBBuild(&readTRB[0],
-    //                          writeBuffer,
-    //                          1,
-    //                          TEST_ADDR);
-
-//         I2C1_MasterWrite(&writeBuffer,1,TEST_ADDR,I2C1_MESSAGE_COMPLETE);
-//        I2C1_WritePointerSet 
+   
          
     }
 

@@ -33,7 +33,7 @@ void __attribute__((weak)) TMR1_CallBack(void)
   {
     T1CONbits.TON = 0;
 
-    if (((i2c_flags.wr_prot == 1) || (protocolCMD == 0x0)) && (global_flags.comm_errors == 0) && (protocolCMD != 0x4))
+    if (((i2c_flags.wr_prot == 1) || (protocolCMD == SEND_BYTE)) && (global_flags.comm_errors == 0) && (protocolCMD != BW_BR_PROC_CALL))
     {
       if (codeCMD == 0x3) /* Example of call to an APP function */
       {
